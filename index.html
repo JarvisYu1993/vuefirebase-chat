@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"><link rel="stylesheet" href="./css/all.css">
+<body>
+<div class="container" id="app">
+
+    <!-- Page header end -->
+    <div class="page">
+        <div class="d-flex align-items-center">
+            <button class="circle circle-del me-1"></button>
+            <button class="circle circle-min me-1"></button>
+            <button class="circle circle-max me-1"></button>
+        </div>
+    </div>
+    <!-- Content wrapper start -->
+    <div class="content-wrapper">
+
+        <!-- Row start -->
+        <div class="row no-gutters">
+
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
+
+                <div class="card m-0">
+
+                    <!-- Row start -->
+                    <div class="row no-gutters">
+                        <div class="col-lg-1 col-12 pe-lg-0">
+                            <div class="section-bar d-flex flex-column align-items-center py-3">
+                                <a href="#" class="section-logo"></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-12 p-lg-0">
+                            <div class="users-container">
+                                <div class="chat-search-box">
+                                    <label for="chatRoom" class="mb-2">聊天室</label>
+                                    <div class="input-group">
+                                        <input class="form-control" placeholder="輸入你的名稱"
+                                        v-model="tempUsername"
+                                        :disabled="username.length"
+                                        autofocus
+                                        @keyup.enter="addUsername" id="chatRoom">
+                                        <div class="input-group-btn">
+                                            <button type="button" class="btn btn-info"
+                                            @click="addUsername" :disabled="username.length">
+                                                <i class="bi bi-arrow-right text-white"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <template v-if="username">
+                                    <ul class="users">
+                                        <li class="person d-flex align-items-center" data-chat="person1">
+                                            <div class="user">
+                                                <img src="./image/pngkit_avatar.png" alt="item.username">
+                                                <span class="status online"></span>
+                                            </div>
+                                            <div class="name-time">
+                                                <span class="name me-1">{{ username }}</span>
+                                                <span class="time">{{ date }}</span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="col-lg-7 col-12 ps-lg-0">
+                            <div class="chat-container">
+                                <ul class="chat-box chat-container-scroll">
+                                    <li class="chat-left" v-for="(item, key) in chatroom"
+                                    :key="key" :class="{'chat-right flex-row-reverse justify-content-start': item.username === username}">
+                                        <div class="chat-avatar">
+                                            <img class="mb-1" src="./image/pngkit_avatar.png" alt="item.username">
+                                            <h4 class="chat-name">{{ item.username }}</h4>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <div class="chat-text" :class="{'chat-user': item.username === username}">{{ item.message }}</div>
+                                            <div class="chat-hour">{{ new Date(item.time).toLocaleTimeString() }}</div>    
+                                        </div>
+                                    </li>
+                                </ul>
+                                <div class="d-flex align-items-center p-2 mb-0" :class="{'disabled': !username}">
+                                    <textarea class="form-control border-0" placeholder="留言" v-model="message" :disabled="!username"></textarea>
+                                    <button type="button" class="btn btn-purple px-4"
+                                    @click="addMessage" :disabled="!username"><i class="bi bi-cursor"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Row end -->
+                </div>
+
+            </div>
+
+        </div>
+        <!-- Row end -->
+
+    </div>
+    <!-- Content wrapper end -->
+
+</div>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.1.4/vue.global.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.8.1/firebase-database.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+<script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-analytics.js"></script>
+<script src="./js/firebase.js"></script>
+<script>
+    const database = firebase.database();
+    const chatroomRef = database.ref('chatroom');
+    const app = Vue.createApp({
+    data() {
+      return {
+        chatroom: [],
+        tempUsername: '',
+        username: '',
+        message: '',
+        date: '',
+      }
+    },
+    methods: {
+      addUsername() {
+        if (this.tempUsername.trim()) {
+          this.username = this.tempUsername;
+          const timeElapsed = Date.now();
+          const today = new Date(timeElapsed);
+          this.date = today.toLocaleDateString();
+        } else {
+          alert('請輸入正確姓名')
+        }
+      },
+      addMessage() {
+        if (!this.message.trim()) {
+          return
+        }
+        const key = chatroomRef.push().key;
+        chatroomRef.child(key).set({
+          username: this.username,
+          message: this.message,
+          time: new Date().getTime(),
+          key,
+        });
+        this.message = '';
+      }
+    },
+    mounted() {
+      chatroomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        this.chatroom = data;
+        console.log(data);
+      })
+    }
+  }).mount('#app')
+</script>
+</body>
+</html>
